@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+}
+
+group = 'me.datatags'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation files('infinitode-2.jar')
+}
+
+jar {
+    manifest {
+        attributes (
+            'Main-Class': 'me.datatags.infinitodewheelsolver.Launcher',
+            // Path is relative to main jar at build/libs/, so we have to backtrack a bit.
+            // Paths that don't exist are just ignored, so we can put in a couple possibilities.
+            'Class-Path': '../../infinitode-2.jar infinitode-2.jar',
+        )
+    }
+}
