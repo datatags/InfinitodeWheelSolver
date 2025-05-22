@@ -131,7 +131,8 @@ Generous use of reflection will be needed. PRs welcome!
 The lucky wheel can be abstracted as a tree, but it's really more complicated than that.
 There are actually two RNGs for the lucky wheel: one deals with wheel generation, and one deals with how far the weapon and wheel turn each time you spin.
 
-Each RNG is only updated when it's used, so the spinner RNG will end up in the same state after three spins, regardless of whether the spin happened because of a purchased respin, purchased new wheel, or just landing on an x2 or x3.
+The spinner RNG is only updated when it's used, so it will end up in the same state after three spins, regardless of whether the spin happened because of a purchased respin, purchased new wheel, or just landing on an x2 or x3.
+This is not the case with the wheel generation RNG, however.
 
 This means that the paths `RRNRN` and `RNRRN` will wind up in the same state at the end, since the spinner RNG and wheel RNG each moved forward the same number of times.
 Note that this isn't the case for paths `RNR` and `RRN`, since even though the spinner will move the same amount in both paths, the weapon and wheel always start at an angle of 0 when buying a new wheel.
@@ -148,6 +149,9 @@ So, to implement this, you'd probably have to keep state information for how man
 Then, you'd have to have an algorithm that, after each new wheel purchase compares the current state to any other paths that also have a new wheel purchase at the current step.
 Then, compare whatever state information is needed.
 You'd also have to consider that the default option is to automatically respin if the wheel lands on a x2 or x3, meaning another call to the spinner RNG.
+
+Another consideration: using research itself to manipulate the wheel generator RNG.
+The wheel generator rolls the RNG once for each research that can't be afforded, so perhaps buying/resetting research and buying/selling items could be integrated as steps for even more possibilities.
 
 I suppose I'm not sure if this is an exhaustive list of what influences wheel generation, so maybe there are more confounding factors once that one is solved.
 That's just the one I know of; it took me quite a while to track down in the initial implementation of this app.
