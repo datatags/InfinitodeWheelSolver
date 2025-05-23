@@ -106,6 +106,8 @@ The app works as-is, but there are a few things I think would be cool to add/imp
   - I'm not very far into endless yet, so accelerators are still more accessible than lucky tickets for me. I'm aware that's not the case the farther you get into endless mode, so I'll add that at some point.
 - Improve performance, see below
   - ~~Faster options for resetting progress~~
+  - Multiple paths with the same resulting RNG state (hard)
+  - Parallel processing and saving path progress
 - Maybe a config GUI at some point?
 
 ## ⏰ Performance
@@ -121,7 +123,7 @@ For example, currently the app will never try to respin the last wheel if there'
 It can certainly be improved; the current algorithm is nearly just brute force.
 There are at least a few shortcuts I know of already that it could be taking advantage of:
 
-### Multiple paths with the same resulting RNG state
+### Multiple paths with the same resulting RNG state (hard)
 The lucky wheel can be abstracted as a tree, but it's really more complicated than that.
 There are actually two RNGs for the lucky wheel: one deals with wheel generation, and one deals with how far the weapon and wheel turn each time you spin.
 
@@ -149,6 +151,13 @@ The wheel generator rolls the RNG once for each research that can't be afforded,
 
 I suppose I'm not sure if this is an exhaustive list of what influences wheel generation, so maybe there are more confounding factors once that one is solved.
 That's just the one I know of; it took me quite a while to track down in the initial implementation of this app.
+
+### Parallel processing and saving path progress
+
+Another way to increase processing speed is to do it in parallel.
+The game uses a lot of global state, so it would have to be implemented as separate processes, each with their own instance of the solver and the game.
+
+Saving path progress would help this along as well, allowing you to stop and resume path processing and allowing straightforward synchronization of the worker processes.
 
 ## 💻 API
 
