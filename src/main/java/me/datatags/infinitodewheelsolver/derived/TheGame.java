@@ -6,7 +6,6 @@ import com.prineside.tdi2.managers.AchievementManager;
 import com.prineside.tdi2.managers.AnalyticsManager;
 import com.prineside.tdi2.managers.AuthManager;
 import com.prineside.tdi2.managers.LocaleManager;
-import com.prineside.tdi2.managers.PreferencesManager;
 import com.prineside.tdi2.managers.ProgressManager;
 import com.prineside.tdi2.managers.PurchaseManager;
 import com.prineside.tdi2.managers.ScreenManager;
@@ -32,7 +31,7 @@ public class TheGame extends Game {
 
     public void loadExtras() {
         // These don't normally exist in headless mode, but are required for certain things we need to do.
-        preferencesManager = new PreferencesManager();
+        preferencesManager = new UnsaveablePreferencesManager();
         screenManager = new ScreenManager();
         statisticsManager = new StatisticsManager();
         progressManager = new ProgressManager();
