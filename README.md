@@ -104,7 +104,8 @@ The app works as-is, but there are a few things I think would be cool to add/imp
 - Configure item weights without recompiling.
 - Add an option to allow purchasing new wheel spins using lucky tickets.
   - I'm not very far into endless yet, so accelerators are still more accessible than lucky tickets for me. I'm aware that's not the case the farther you get into endless mode, so I'll add that at some point.
-- Improve efficiency. Explained in detail below.
+- Improve performance, see below
+  - ~~Faster options for resetting progress~~
 - Maybe a config GUI at some point?
 
 ## ⏰ Performance
@@ -119,13 +120,6 @@ For example, currently the app will never try to respin the last wheel if there'
 
 It can certainly be improved; the current algorithm is nearly just brute force.
 There are at least a few shortcuts I know of already that it could be taking advantage of:
-
-### Faster options for resetting progress
-
-At the moment, after reaching the end of a path, the inventory and game progress are reloaded from a copy of the save file stored in memory.
-The deserialization process isn't fast, so there's probably some gains to be had by directly saving/restoring the inventory items and progress.
-That sounds harder than just calling `load()` a bunch of times though, so I haven't implemented it yet.
-Generous use of reflection will be needed. PRs welcome!
 
 ### Multiple paths with the same resulting RNG state
 The lucky wheel can be abstracted as a tree, but it's really more complicated than that.

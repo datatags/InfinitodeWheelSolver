@@ -20,11 +20,19 @@ public class WheelSolver {
     private final List<PathResult> results = new ArrayList<>();
     private final Stack<List<Boolean>> choices = new Stack<>();
     private final RegularPrefMap progressData;
+    private final InventoryData inventoryData;
     public WheelSolver(SolverConfig config) {
         this.config = config;
         progressData = new RegularPrefMap((byte)1);
         byte[] data = Gdx.files.local(PreferencesManager.getProgressPrefsFilePath()).readBytes();
         progressData.fromBytes(data, 0, data.length);
+
+        // Make sure progress data is all restored from save before we snapshot it
+        Config.IS_HEADLESS = false;
+        ProgressPrefs.i().progress.load(progressData);
+        ProgressPrefs.i().inventory.load(progressData);
+        Config.IS_HEADLESS = true;
+        this.inventoryData = new InventoryData();
     }
 
     public double calculateScore(PathResult pathResult) {
@@ -41,11 +49,8 @@ public class WheelSolver {
      * Reload inventory
      */
     public void resettiSpaghetti() {
-        // Inventory won't fully load in headless mode
-        Config.IS_HEADLESS = false;
         ProgressPrefs.i().progress.load(progressData);
-        ProgressPrefs.i().inventory.load(progressData);
-        Config.IS_HEADLESS = true;
+        inventoryData.restore();
     }
 
     protected void doWheelAction(WheelWrapper wheel, boolean action, PathResult result) {

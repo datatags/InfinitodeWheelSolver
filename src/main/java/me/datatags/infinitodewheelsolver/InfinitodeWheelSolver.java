@@ -53,7 +53,7 @@ public class InfinitodeWheelSolver {
         // Each accelerator spent is -1, so essentially you're assigning an accelerator cost to each item.
         Map<Item, Double> itemWeights = new HashMap<>();
         itemWeights.put(Item.D.RESEARCH_TOKEN, 100d);
-        SolverConfig config = new SolverConfig(itemWeights, 0);
+        SolverConfig config = new SolverConfig(itemWeights, 6);
 
         WheelSolver solver = new WheelSolver(config);
         solver.run();

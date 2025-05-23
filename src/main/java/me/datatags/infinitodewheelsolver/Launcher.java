@@ -3,7 +3,8 @@ package me.datatags.infinitodewheelsolver;
 import com.prineside.tdi2.Config;
 
 public class Launcher {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+        Thread.sleep(10000);
         try {
             Class.forName("com.prineside.tdi2.Game");
         } catch (ClassNotFoundException e) {
