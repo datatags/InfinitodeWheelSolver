@@ -8,6 +8,7 @@ import com.prineside.tdi2.managers.PreferencesManager;
 import com.prineside.tdi2.managers.preferences.RegularPrefMap;
 import com.prineside.tdi2.managers.preferences.categories.ProgressPrefs;
 import com.prineside.tdi2.ui.shared.LuckyWheelOverlay;
+import com.prineside.tdi2.utils.logging.LogLevel;
 import me.datatags.infinitodewheelsolver.exceptions.NotEnoughResourcesException;
 
 import java.util.ArrayList;
@@ -80,11 +81,16 @@ public class WheelSolver {
     }
 
     public void run() {
+        // info is too noisy
+        LogLevel.setCurrent(LogLevel.WARNING);
         results.clear();
         choices.clear();
         choices.push(new ArrayList<>());
         int totalResults = 0;
         while (!choices.empty()) {
+            if (totalResults % 1000 == 0) {
+                System.out.println("Explored " + totalResults + " paths so far...");
+            }
             List<Boolean> currentChoices = choices.pop();
             resettiSpaghetti();
             PathResult result = new PathResult(currentChoices);
