@@ -11,14 +11,19 @@ import com.prineside.tdi2.ui.shared.LuckyWheelOverlay;
 import com.prineside.tdi2.utils.logging.LogLevel;
 import me.datatags.infinitodewheelsolver.exceptions.NotEnoughResourcesException;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
 public class WheelSolver {
     private final SolverConfig config;
-    private final List<PathResult> results = new ArrayList<>();
+    private final List<SimpleResult> results = new ArrayList<>();
     private final Stack<List<Boolean>> choices = new Stack<>();
     private final RegularPrefMap progressData;
     private final InventoryData inventoryData;
@@ -129,7 +134,7 @@ public class WheelSolver {
                     totalResults++;
                     // No choices left, check whether we got any of the things we wanted.
                     if (hasDesirableItems(result)) {
-                        results.add(result);
+                        results.add(result.toSimple(this));
                     }
                     break;
                 }
@@ -139,9 +144,20 @@ public class WheelSolver {
             }
         }
         System.out.println("Finished exploring possibilities, got " + results.size() + " useful results (" + totalResults + " total)");
-        results.sort((a, b) -> Double.compare(calculateScore(b), calculateScore(a)));
-        for (PathResult result : results) {
-            result.print(this);
+        Collections.sort(results);
+        System.out.println("These are the top 25:");
+        for (int i = 0; i < 25; i++) {
+            System.out.println(results.get(i));
         }
+        File outFile = new File("results-" + Instant.now().getEpochSecond() + ".txt");
+        System.out.println("Please wait while other paths are written to " + outFile.getAbsolutePath() + ", or press Ctrl-C now if you don't care");
+        try (FileWriter writer = new FileWriter(outFile)) {
+            for (SimpleResult result : results) {
+                writer.write(result.toString() + "\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("Done!");
     }
 }

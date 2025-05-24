@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 
 public class PathResult {
     private final List<Boolean> path;
@@ -45,36 +46,24 @@ public class PathResult {
         rewards.merge(reward.getItem(), reward.getCount(), Integer::sum);
     }
 
-    public void print(WheelSolver solver) {
-        System.out.print(solver.calculateScore(this) + ": [");
+    public SimpleResult toSimple(WheelSolver solver) {
+        StringBuilder result = new StringBuilder("[");
         for (boolean step : path) {
-            System.out.print(step ? 'N' : 'R');
+            result.append(step ? 'N' : 'R');
         }
-        System.out.print("] ");
-        // Print the desirable items first, followed by the others
-        boolean first = true;
-        for (Map.Entry<Item, Integer> entry : rewards.entrySet()) {
-            if (solver.isDesirableItem(entry.getKey())) {
-                if (first) {
-                    first = false;
-                } else {
-                    System.out.print(", ");
-                }
-                System.out.print(entry.getValue() + "x " + entry.getKey().getTitle());
+        result.append("] ");
+        StringJoiner good = new StringJoiner(", ");
+        StringJoiner bad = new StringJoiner(", ");
+        List<Item> items = new ArrayList<>(rewards.keySet());
+        items.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.getTitle().toString(), b.getTitle().toString()));
+        for (Item item : items) {
+            if (solver.isDesirableItem(item)) {
+                good.add(rewards.get(item) + "x " + item.getTitle().toString());
+            } else {
+                bad.add(rewards.get(item) + "x " + item.getTitle().toString());
             }
         }
-        first = true;
-        System.out.print(" (");
-        for (Map.Entry<Item, Integer> entry : rewards.entrySet()) {
-            if (!solver.isDesirableItem(entry.getKey())) {
-                if (first) {
-                    first = false;
-                } else {
-                    System.out.print(", ");
-                }
-                System.out.print(entry.getValue() + "x " + entry.getKey().getTitle());
-            }
-        }
-        System.out.println(")");
+        result.append(good).append(" (").append(bad).append(")");
+        return new SimpleResult(solver.calculateScore(this), result.toString());
     }
 }

@@ -74,7 +74,7 @@ public class WheelWrapper {
         // e(): new wheel
         // f(): build respin UI. not called here (since we're headless) but handy for reference
 
-        invoke(wheel, "a", 0f); // spin current wheel. speed doesn't matter
+        invoke(wheel, "a", "spin", 0f); // spin current wheel. speed doesn't matter
 
         rebuild();
 
@@ -82,7 +82,7 @@ public class WheelWrapper {
         float weaponRot = getFieldValue(wheel, "F");
         weaponRot = (weaponRot % 360 + 360) % 360;
 
-        int targetIndex = invoke(wheel, "a", weaponRot, wheelRot); // get index of item we landed on
+        int targetIndex = invoke(wheel, "a", "get index", weaponRot, wheelRot); // get index of item we landed on
         Array<LuckyWheelOverlay.WheelOptionConfig> options = getFieldValue(wheel, "z");
         LuckyWheelOverlay.WheelOptionConfig option = options.get(targetIndex);
         option.wasHit = true;
@@ -215,7 +215,7 @@ public class WheelWrapper {
             rebuild();
             ProgressPrefs.i().progress.setLuckyWheelSpinAvailable(true);
         } else {
-            invoke(wheel, "d"); // Game internal respin setup
+            invoke(wheel, "d", "respin"); // Game internal respin setup
         }
         return accelCost;
     }
