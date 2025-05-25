@@ -1,5 +1,6 @@
 package me.datatags.infinitodewheelsolver;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -14,7 +15,6 @@ public class ReflectionUtils {
     private static Field getField(Class<?> clazz, String fieldName) {
         return fields.computeIfAbsent(clazz, c -> new HashMap<>()).computeIfAbsent(fieldName, f -> {
             try {
-                System.out.println("Computing new field " + clazz.getName() + "." + f);
                 Field field = clazz.getDeclaredField(f);
                 field.setAccessible(true);
                 Field modifiers = Field.class.getDeclaredField("modifiers");
@@ -27,20 +27,25 @@ public class ReflectionUtils {
         });
     }
 
+    private static Class<?>[] getParamTypes(Object... params) {
+        Class<?>[] types = new Class<?>[params.length];
+        for (int i = 0; i < params.length; i++) {
+            try {
+                // Unbox if we can, i.e. java.lang.Float.class -> float.class
+                types[i] = (Class<?>) params[i].getClass().getDeclaredField("TYPE").get(params[i].getClass());
+                continue;
+            } catch (ReflectiveOperationException ignored) {
+            }
+            // Otherwise just use the field as-is
+            types[i] = params[i].getClass();
+        }
+        return types;
+    }
+
     private static Method getMethod(Class<?> clazz, String methodName, String identifier, Object... params) {
         return methods.computeIfAbsent(clazz, c -> new HashMap<>()).computeIfAbsent(identifier, id -> {
             try {
-                Class<?>[] types = new Class<?>[params.length];
-                for (int i = 0; i < params.length; i++) {
-                    try {
-                        // Unbox if we can, i.e. java.lang.Float.class -> float.class
-                        types[i] = (Class<?>) params[i].getClass().getDeclaredField("TYPE").get(params[i].getClass());
-                        continue;
-                    } catch (ReflectiveOperationException ignored) {
-                    }
-                    // Otherwise just use the field as-is
-                    types[i] = params[i].getClass();
-                }
+                Class<?>[] types = getParamTypes(params);
                 Method method = clazz.getDeclaredMethod(methodName, types);
                 method.setAccessible(true);
                 return method;
@@ -107,6 +112,26 @@ public class ReflectionUtils {
         try {
             return (T) getMethod(obj.getClass(), methodName, identifier, params).invoke(obj, params);
         } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T construct(Class<T> clazz, Object... params) {
+        try {
+            Constructor<T> constructor = clazz.getConstructor(getParamTypes(params));
+            constructor.setAccessible(true);
+            return constructor.newInstance(params);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T createWithoutConstructor(Class<T> clazz) {
+        try {
+            sun.misc.Unsafe unsafe = getFieldValue(null, sun.misc.Unsafe.class, "theUnsafe");
+            return (T) unsafe.allocateInstance(clazz);
+        } catch (InstantiationException e) {
             throw new RuntimeException(e);
         }
     }

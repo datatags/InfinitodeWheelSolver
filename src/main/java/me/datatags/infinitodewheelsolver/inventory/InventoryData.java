@@ -1,4 +1,4 @@
-package me.datatags.infinitodewheelsolver;
+package me.datatags.infinitodewheelsolver.inventory;
 
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.DelayedRemovalArray;

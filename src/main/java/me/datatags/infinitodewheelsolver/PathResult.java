@@ -46,6 +46,13 @@ public class PathResult {
         rewards.merge(reward.getItem(), reward.getCount(), Integer::sum);
     }
 
+    public PathResult copy() {
+        PathResult o = new PathResult(new ArrayList<>(path));
+        o.acceleratorCost = acceleratorCost;
+        o.rewards.putAll(rewards);
+        return o;
+    }
+
     public SimpleResult toSimple(WheelSolver solver) {
         StringBuilder result = new StringBuilder("[");
         for (boolean step : path) {

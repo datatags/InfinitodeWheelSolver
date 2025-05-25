@@ -31,7 +31,7 @@ public class TheGame extends Game {
 
     public void loadExtras() {
         // These don't normally exist in headless mode, but are required for certain things we need to do.
-        preferencesManager = new UnsaveablePreferencesManager();
+        preferencesManager = new UnsaveablePreferencesManager();;
         screenManager = new ScreenManager();
         statisticsManager = new StatisticsManager();
         progressManager = new ProgressManager();

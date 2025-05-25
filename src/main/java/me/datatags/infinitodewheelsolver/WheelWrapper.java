@@ -13,6 +13,7 @@ import me.datatags.infinitodewheelsolver.exceptions.SpinAvailableException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static me.datatags.infinitodewheelsolver.ReflectionUtils.createWithoutConstructor;
 import static me.datatags.infinitodewheelsolver.ReflectionUtils.getFieldValue;
 import static me.datatags.infinitodewheelsolver.ReflectionUtils.invoke;
 import static me.datatags.infinitodewheelsolver.ReflectionUtils.setFieldValue;
@@ -21,17 +22,10 @@ public class WheelWrapper {
     private final LuckyWheelOverlay wheel;
     private final Array<LuckyWheelOverlay.WheelOptionConfig> options = new Array<>(LuckyWheelOverlay.WheelOptionConfig.class);
     public WheelWrapper() {
-        try {
-            // Hack to avoid calling constructor, which would try to load UI elements
-            sun.misc.Unsafe unsafe = getFieldValue(null, sun.misc.Unsafe.class, "theUnsafe");
-            wheel = (LuckyWheelOverlay) unsafe.allocateInstance(LuckyWheelOverlay.class);
-
-            // This is final and needs to be initialized, plus we get a reference to it this way
-            setFieldValue(wheel, "z", options);
-            setFieldValue(wheel, "q", new Group());
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        wheel = createWithoutConstructor(LuckyWheelOverlay.class);
+        // This is final and needs to be initialized, plus we get a reference to it this way
+        setFieldValue(wheel, "z", options);
+        setFieldValue(wheel, "q", new Group());
     }
 
     /**
@@ -103,6 +97,10 @@ public class WheelWrapper {
             if (!(e.getCause() instanceof NullPointerException)|| !(item.item.getItem() instanceof Item.UsableItem)
                     || !((Item.UsableItem)item.item.getItem()).autoUseWhenAdded()) {
                 throw new RuntimeException(e);
+            }
+            // Otherwise, finish using the items like that method was supposed to do (it uses only one successfully)
+            for (int i = 1; i < item.item.getCount(); i++) {
+                ((Item.UsableItem) item.item.getItem()).useItem();
             }
         }
 
@@ -180,6 +178,7 @@ public class WheelWrapper {
      * @throws NotEnoughResourcesException if you don't have enough resources to purchase a respin.
      */
     public int buyRespin() {
+//        System.out.println("Buying respin");
         if (isSpinAvailable()) {
             throw new SpinAvailableException("A spin is available, you should spin first. (Logic error?)");
         }
@@ -227,6 +226,7 @@ public class WheelWrapper {
      * @throws NotEnoughResourcesException if you don't have enough lucky tickets to purchase a new wheel.
      */
     public void buyNew() {
+//        System.out.println("Buying respin");
         // Theoretically e() does this but it also does a bunch of stuff we don't want.
         if (ProgressPrefs.i().progress.isLuckyWheelSpinAvailable()) {
             throw new SpinAvailableException("A spin is available, you should spin first. (Logic error?)");
@@ -239,9 +239,15 @@ public class WheelWrapper {
         Game.i.progressManager.generateNewLuckyWheel();
         ProgressPrefs.i().progress.setLuckyWheelSpinAvailable(true);
         rebuild();
+//        System.out.println("New wheel:");
+//        dump();
     }
 
-    protected void rebuild() {
+    /**
+     * Rebuild the wheel options from whatever's currently in ProgressManager's wheel options.
+     * You don't normally need to call this, it's called internally.
+     */
+    public void rebuild() {
         // Not all the fields are initialized so we get a NPE at some point in there. However, it doesn't matter
         // because by that point it's done everything we needed anyway.
         try {

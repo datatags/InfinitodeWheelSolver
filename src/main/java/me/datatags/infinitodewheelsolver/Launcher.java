@@ -17,13 +17,10 @@ public class Launcher {
         Config.SITE_URL = "";
         Config.AVATAR_WEB_TEXTURES_URL = "";
 
-        if (args.length == 0) {
-            InfinitodeWheelSolver.main(args);
-        } else if (args.length == 1 && args[0].equalsIgnoreCase("original")) {
+        if (args.length == 1 && args[0].equalsIgnoreCase("original")) {
             OriginalGameLauncher.main(args);
         } else {
-            System.err.println("Unknown argument(s). Usage: InfinitodeWheelSolver.jar [original]");
-            System.exit(1);
+            InfinitodeWheelSolver.main(args);
         }
     }
 }
