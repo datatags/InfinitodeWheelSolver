@@ -69,6 +69,15 @@ At any time, you can either purchase a respin of the existing wheel, or buy a ne
 Once the algorithm reaches a point where it has no more options, it stops, saves the steps taken and items received, and reloads progress from the save file to try another path through the tree.
 Once it's exhausted all possible options, it sorts the options from best to worst, and displays them.
 
+### Algorithms
+
+There are actually two algorithms included in the application: linear and recursive.
+Linear is much slower but more reliable; it tells the game to reset your inventory and progress to what's in your save file, and only spins the wheel in linear sequences.
+Recursive is much faster but more likely to be inaccurate; it replaces some of the game code to be able to quickly roll back the user's inventory, and maintains many game states simultaneously for efficiency.
+
+You can think of the linear one more like a sledgehammer; there's little doubt that it will get the job done, but it's more unwieldy.
+The recursive one is more like a scalpel, it's precise and efficient, but only if you know how to use it; it's possible there are edge cases that it doesn't handle.
+
 ## 💎 Understanding the output
 
 Here's an abridged output from one of the runs I did:
@@ -93,6 +102,9 @@ The second column, enclosed in square brackets, is the steps required to get to 
 `R` means "respin", and `N` means "new wheel".
 Easy!
 
+> Note: these correspond 1:1 to the buttons you should hit on the interface; there's no indicator for respinning after landing on a multiplier because there's no button for that, you just spin again.
+In other words, `NR` means you should do "purchase wheel" followed by "purchase respin", not just "purchase wheel" and then use your free spin. 
+
 The third column, outside any brackets, is the list of desired items that would be acquired from doing these steps.
 
 The last column, in parenthesis, is the list of non-desired items that would be acquired.
@@ -114,7 +126,7 @@ The app works as-is, but there are a few things I think would be cool to add/imp
 
 The time complexity of this algorithm is inherently pretty large, since you have two options (respin or new wheel) after each spin until you run out of tickets or accelerators.
 And indeed, it's not very fast.
-It took 80 minutes to do a run with ~400 accelerators and 9 tickets.
+It took ~9 minutes to do a run with ~400 accelerators and 11 tickets on fairly recent hardware.
 Time required decreases dramatically as the number of tickets is decreased.
 
 There are a few optimizations in the code now, but not many.
@@ -163,7 +175,7 @@ Saving path progress would help this along as well, allowing you to stop and res
 
 If you'd like to use this tool as a library for your own project, go right ahead!
 `WheelWrapper` is where a lot of the Infinitode magic happens, so I've tried to thoroughly document it.
-`WheelSolver` contains the algorithm that tries all the possible choices.
+`LinearWheelSolver` and `RecursiveWheelSolver` contain the algorithms that tries all the possible choices.
 `TheGame` is also worth a mention; that's where the parts of the game that we need are initialized.
 
 `InfinitodeWheelSolver` is the main class that runs the algorithm.
