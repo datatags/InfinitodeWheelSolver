@@ -5,6 +5,7 @@ import com.prineside.tdi2.Game;
 import com.prineside.tdi2.Item;
 import com.prineside.tdi2.managers.ProgressManager;
 import com.prineside.tdi2.managers.preferences.categories.ProgressPrefs;
+import com.prineside.tdi2.managers.preferences.categories.SettingsPrefs;
 import com.prineside.tdi2.scene2d.Group;
 import com.prineside.tdi2.ui.shared.LuckyWheelOverlay;
 import me.datatags.infinitodewheelsolver.exceptions.NotEnoughResourcesException;
@@ -19,13 +20,16 @@ import static me.datatags.infinitodewheelsolver.ReflectionUtils.invoke;
 import static me.datatags.infinitodewheelsolver.ReflectionUtils.setFieldValue;
 
 public class WheelWrapper {
+    private static final Group group = new Group();
     private final LuckyWheelOverlay wheel;
     private final Array<LuckyWheelOverlay.WheelOptionConfig> options = new Array<>(LuckyWheelOverlay.WheelOptionConfig.class);
     public WheelWrapper() {
         wheel = createWithoutConstructor(LuckyWheelOverlay.class);
         // This is final and needs to be initialized, plus we get a reference to it this way
         setFieldValue(wheel, "z", options);
-        setFieldValue(wheel, "q", new Group());
+        setFieldValue(wheel, "q", group);
+        // Ensure we can spin the wheel even if we recently loaded from cloud
+        SettingsPrefs.i().auth.sessionData.lastLoadFromCloudTimestamp = 0;
     }
 
     /**
@@ -178,7 +182,6 @@ public class WheelWrapper {
      * @throws NotEnoughResourcesException if you don't have enough resources to purchase a respin.
      */
     public int buyRespin() {
-//        System.out.println("Buying respin");
         if (isSpinAvailable()) {
             throw new SpinAvailableException("A spin is available, you should spin first. (Logic error?)");
         }
@@ -226,7 +229,6 @@ public class WheelWrapper {
      * @throws NotEnoughResourcesException if you don't have enough lucky tickets to purchase a new wheel.
      */
     public void buyNew() {
-//        System.out.println("Buying respin");
         // Theoretically e() does this but it also does a bunch of stuff we don't want.
         if (ProgressPrefs.i().progress.isLuckyWheelSpinAvailable()) {
             throw new SpinAvailableException("A spin is available, you should spin first. (Logic error?)");
@@ -239,8 +241,6 @@ public class WheelWrapper {
         Game.i.progressManager.generateNewLuckyWheel();
         ProgressPrefs.i().progress.setLuckyWheelSpinAvailable(true);
         rebuild();
-//        System.out.println("New wheel:");
-//        dump();
     }
 
     /**
@@ -256,7 +256,7 @@ public class WheelWrapper {
 
         // Avoids an NPE when we're finalizing the wheel result
         for (LuckyWheelOverlay.WheelOptionConfig option : options) {
-            setFieldValue(option, "e", new Group());
+            setFieldValue(option, "e", group);
         }
     }
 }

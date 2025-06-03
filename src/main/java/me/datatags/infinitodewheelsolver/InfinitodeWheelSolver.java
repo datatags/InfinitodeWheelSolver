@@ -16,6 +16,7 @@ import java.util.Map;
 public class InfinitodeWheelSolver {
     private static Game game;
     private static boolean recursive;
+
     public static void main(String[] args) {
         if (args.length > 0) {
             if (args[0].equalsIgnoreCase("recursive")) {
@@ -36,7 +37,7 @@ public class InfinitodeWheelSolver {
     }
 
     public static void run() {
-        // The first is required for our hackery, the second is a check to make sure our loadExtras function ran.
+        // The itemManager is required for our hackery, localeManager is to make sure our loadExtras function ran.
         while (game.itemManager == null || game.localeManager == null) {
             game.gameSyncLoader.iterate();
         }
@@ -54,7 +55,7 @@ public class InfinitodeWheelSolver {
         // Each accelerator spent is -1, so essentially you're assigning an accelerator cost to each item.
         Map<Item, Double> itemWeights = new HashMap<>();
         itemWeights.put(Item.D.RESEARCH_TOKEN, 100d);
-        SolverConfig config = new SolverConfig(itemWeights, 0);
+        SolverConfig config = new SolverConfig(itemWeights, 14, 250, 1000);
 
         WheelSolver solver;
         if (recursive) {

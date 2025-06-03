@@ -6,46 +6,26 @@ import com.prineside.tdi2.Item;
 import com.prineside.tdi2.managers.PreferencesManager;
 import com.prineside.tdi2.managers.preferences.RegularPrefMap;
 import com.prineside.tdi2.managers.preferences.categories.ProgressPrefs;
-import com.prineside.tdi2.ui.shared.LuckyWheelOverlay;
 import me.datatags.infinitodewheelsolver.exceptions.NotEnoughResourcesException;
 import me.datatags.infinitodewheelsolver.inventory.InventoryData;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
-public class LinearWheelSolver implements WheelSolver {
-    private final SolverConfig config;
-    private final List<SimpleResult> results = new ArrayList<>();
+public class LinearWheelSolver extends WheelSolver {
     private final Stack<List<Boolean>> choices = new Stack<>();
     private final RegularPrefMap progressData;
     private final InventoryData inventoryData;
-    private int totalResults = 0;
+
     public LinearWheelSolver(SolverConfig config) {
-        this.config = config;
-        progressData = new RegularPrefMap((byte)1);
+        super(config);
+        progressData = new RegularPrefMap((byte) 1);
         byte[] data = Gdx.files.local(PreferencesManager.getProgressPrefsFilePath()).readBytes();
         progressData.fromBytes(data, 0, data.length);
 
         // Snapshot data
         this.inventoryData = new InventoryData();
-    }
-
-    @Override
-    public double calculateScore(PathResult pathResult) {
-        double itemScore = 0;
-
-        for (Map.Entry<Item, Integer> entry : pathResult.getRewards().entrySet()) {
-            itemScore += config.getItemWeights().getOrDefault(entry.getKey(), 0d) * entry.getValue();
-        }
-
-        return itemScore - pathResult.getAcceleratorCost();
     }
 
     /**
@@ -65,30 +45,14 @@ public class LinearWheelSolver implements WheelSolver {
         result.addReward(wheel.spin().item);
     }
 
-    @Override
-    public boolean isDesirableItem(Item item) {
-        return config.getItemWeights().getOrDefault(item, 0.0) > 0;
-    }
-
-    public boolean hasDesirableItems(WheelWrapper wheel) {
-        for (LuckyWheelOverlay.WheelOption option : wheel.getWheelOptions()) {
-            if (option.item != null && isDesirableItem(option.item.getItem())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean hasDesirableItems(PathResult result) {
         return result.getRewards().keySet().stream().anyMatch(this::isDesirableItem);
     }
 
     @Override
-    public void run() {
-        results.clear();
+    public void solve() {
         choices.clear();
         choices.push(new ArrayList<>());
-        totalResults = 0;
         while (!choices.empty()) {
             if (totalResults % 1000 == 0) {
                 System.out.println("Explored " + totalResults + " paths so far...");
@@ -129,10 +93,8 @@ public class LinearWheelSolver implements WheelSolver {
                     newChoice = false;
                 } else {
                     totalResults++;
-                    // No choices left, check whether we got any of the things we wanted.
-                    if (hasDesirableItems(result)) {
-                        results.add(result.toSimple(this));
-                    }
+                    // Save results
+                    results.add(PackedResult.fromPathResult(result, this));
                     break;
                 }
                 // result already has a reference to this currentChoices so we don't need to update it manually
@@ -140,24 +102,5 @@ public class LinearWheelSolver implements WheelSolver {
                 doWheelAction(wheel, newChoice, result);
             }
         }
-        System.out.println("Finished exploring possibilities, got " + results.size() + " useful results (" + totalResults + " total)");
-        Collections.sort(results);
-        System.out.println("These are the top 25:");
-        for (int i = 0; i < 25; i++) {
-            if (i >= results.size()) {
-                break;
-            }
-            System.out.println(results.get(i));
-        }
-        File outFile = new File("results-" + Instant.now().getEpochSecond() + ".txt");
-        System.out.println("Please wait while other paths are written to " + outFile.getAbsolutePath() + ", or press Ctrl-C now if you don't care");
-        try (FileWriter writer = new FileWriter(outFile)) {
-            for (SimpleResult result : results) {
-                writer.write(result.toString() + "\n");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println("Done!");
     }
 }
