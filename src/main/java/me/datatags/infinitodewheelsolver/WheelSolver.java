@@ -1,13 +1,13 @@
 package me.datatags.infinitodewheelsolver;
 
 import com.prineside.tdi2.Item;
+import com.prineside.tdi2.ItemStack;
 import com.prineside.tdi2.ui.shared.LuckyWheelOverlay;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Map;
 
 public abstract class WheelSolver {
     protected final SolverConfig config;
@@ -20,13 +20,16 @@ public abstract class WheelSolver {
     }
 
     public double calculateScore(PathResult pathResult) {
+        double accelWeight = config.getItemWeights().getOrDefault(Item.D.ACCELERATOR, 0.0);
+        double ticketWeight = config.getItemWeights().getOrDefault(Item.D.LUCKY_SHOT_TOKEN, 0.0);
         double itemScore = 0;
-
-        for (Map.Entry<Item, Integer> entry : pathResult.getRewards().entrySet()) {
-            itemScore += config.getItemWeights().getOrDefault(entry.getKey(), 0d) * entry.getValue();
+        for (PathStep step : pathResult.getPathSteps()) {
+            ItemStack stack = step.getReward();
+            itemScore += config.getItemWeights().getOrDefault(stack.getItem(), 0.0) * stack.getCount();
+            itemScore -= step.getAccelCost() * accelWeight + step.getTicketCost() * ticketWeight;
         }
 
-        return itemScore - pathResult.getAcceleratorCost();
+        return itemScore;
     }
 
     public boolean hasDesirableItems(WheelWrapper wheel) {
@@ -40,6 +43,23 @@ public abstract class WheelSolver {
 
     public boolean isDesirableItem(Item item) {
         return config.getItemWeights().getOrDefault(item, 0.0) > 0;
+    }
+
+    protected void doWheelAction(WheelWrapper wheel, boolean action, PathResult result) {
+        int accelCost = 0;
+        int ticketCost = 0;
+        if (action) {
+            wheel.buyNew();
+            ticketCost = 1;
+        } else {
+            if (config.isRespinUsingTickets()) {
+                ticketCost = wheel.buyRespin(true);
+            } else {
+                accelCost = wheel.buyRespin(false);
+            }
+        }
+        ItemStack stack = wheel.spin().item;
+        result.addStep(new PathStep(action, accelCost, ticketCost, stack), isDesirableItem(stack.getItem()));
     }
 
     public void run() {

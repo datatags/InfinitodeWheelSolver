@@ -6,12 +6,10 @@ import com.badlogic.gdx.backends.headless.HeadlessFiles;
 import com.prineside.tdi2.Config;
 import com.prineside.tdi2.Game;
 import com.prineside.tdi2.Item;
+import com.prineside.tdi2.enums.CaseType;
 import com.prineside.tdi2.ui.shared.LuckyWheelOverlay;
 import com.prineside.tdi2.utils.logging.LogLevel;
 import me.datatags.infinitodewheelsolver.derived.TheGame;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class InfinitodeWheelSolver {
     private static Game game;
@@ -53,9 +51,13 @@ public class InfinitodeWheelSolver {
 
         // Define what items you want and how much you want them.
         // Each accelerator spent is -1, so essentially you're assigning an accelerator cost to each item.
-        Map<Item, Double> itemWeights = new HashMap<>();
-        itemWeights.put(Item.D.RESEARCH_TOKEN, 100d);
-        SolverConfig config = new SolverConfig(itemWeights, 14, 250, 1000);
+        SolverConfig config = new SolverConfig()
+                .withItemWeight(Item.D.ACCELERATOR, 1)
+                .withItemWeight(Item.D.LUCKY_SHOT_TOKEN, 100)
+                .withItemWeight(Item.D.RESEARCH_TOKEN, 100)
+                .withItemWeight(Item.D.CASE_KEY_CYAN, 1)
+                .withItemWeight(Item.D.F_CASE.create(CaseType.CYAN, false), 10)
+                .withTickets(14);
 
         WheelSolver solver;
         if (recursive) {
@@ -81,7 +83,7 @@ public class InfinitodeWheelSolver {
                 wheel.buyNew();
                 wheel.dump();
             } else {
-                wheel.buyRespin();
+                wheel.buyRespin(false);
             }
             LuckyWheelOverlay.WheelOption option = wheel.spin();
             System.out.println("Got " + option.item.getCount() + "x " + option.item.getItem().getTitle());

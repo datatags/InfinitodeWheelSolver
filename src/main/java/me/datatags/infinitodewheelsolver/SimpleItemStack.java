@@ -2,13 +2,17 @@ package me.datatags.infinitodewheelsolver;
 
 public class SimpleItemStack implements Comparable<SimpleItemStack> {
     public final String name;
-    public final int amount;
+    public int amount;
     public final boolean desired;
 
     public SimpleItemStack(String name, int amount, boolean desired) {
         this.name = name;
         this.amount = amount;
         this.desired = desired;
+    }
+
+    public void addAmount(int amount) {
+        this.amount += amount;
     }
 
     @Override

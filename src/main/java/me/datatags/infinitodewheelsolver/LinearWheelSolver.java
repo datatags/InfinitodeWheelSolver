@@ -36,19 +36,6 @@ public class LinearWheelSolver extends WheelSolver {
         inventoryData.restore();
     }
 
-    protected void doWheelAction(WheelWrapper wheel, boolean action, PathResult result) {
-        if (action) {
-            wheel.buyNew();
-        } else {
-            result.addAcceleratorCost(wheel.buyRespin());
-        }
-        result.addReward(wheel.spin().item);
-    }
-
-    public boolean hasDesirableItems(PathResult result) {
-        return result.getRewards().keySet().stream().anyMatch(this::isDesirableItem);
-    }
-
     @Override
     public void solve() {
         choices.clear();
@@ -59,11 +46,8 @@ public class LinearWheelSolver extends WheelSolver {
             }
             List<Boolean> currentChoices = choices.pop();
             resettiSpaghetti();
-            PathResult result = new PathResult(currentChoices);
+            PathResult result = new PathResult();
             WheelWrapper wheel = new WheelWrapper();
-            if (wheel.isSpinAvailable()) {
-                result.addReward(wheel.spin().item);
-            }
             try {
                 for (boolean choice : currentChoices) {
                     doWheelAction(wheel, choice, result);

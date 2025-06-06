@@ -23,6 +23,7 @@ public class WheelWrapper {
     private static final Group group = new Group();
     private final LuckyWheelOverlay wheel;
     private final Array<LuckyWheelOverlay.WheelOptionConfig> options = new Array<>(LuckyWheelOverlay.WheelOptionConfig.class);
+
     public WheelWrapper() {
         wheel = createWithoutConstructor(LuckyWheelOverlay.class);
         // This is final and needs to be initialized, plus we get a reference to it this way
@@ -35,6 +36,7 @@ public class WheelWrapper {
     /**
      * Spin the wheel. You must have a spin available ({@link WheelWrapper::isSpinAvailable()})
      * If the wheel lands on x2 or x3, it will be automatically respun.
+     *
      * @return The item the wheel landed on.
      */
     public LuckyWheelOverlay.WheelOption spin() {
@@ -43,6 +45,7 @@ public class WheelWrapper {
 
     /**
      * Spin the wheel. You must have a spin available ({@link #isSpinAvailable()})
+     *
      * @param respinOnMultiplier Whether the wheel should be automatically respun if the wheel lands on x2 or x3.
      * @return The option the wheel landed on.
      * @throws IllegalStateException if there isn't a spin available.
@@ -98,8 +101,8 @@ public class WheelWrapper {
         } catch (InvocationTargetException e) {
             // Items that can be auto-used throw an NPE due to the fact that they try to display a notification.
             // If we're trying to add such an item, ignore the exception, otherwise rethrow it for debugging.
-            if (!(e.getCause() instanceof NullPointerException)|| !(item.item.getItem() instanceof Item.UsableItem)
-                    || !((Item.UsableItem)item.item.getItem()).autoUseWhenAdded()) {
+            if (!(e.getCause() instanceof NullPointerException) || !(item.item.getItem() instanceof Item.UsableItem)
+                    || !((Item.UsableItem) item.item.getItem()).autoUseWhenAdded()) {
                 throw new RuntimeException(e);
             }
             // Otherwise, finish using the items like that method was supposed to do (it uses only one successfully)
@@ -117,6 +120,7 @@ public class WheelWrapper {
 
     /**
      * Get the options currently available on the wheel. Includes both items and multipliers.
+     *
      * @return An Iterable of available options on the wheel.
      */
     public Iterable<LuckyWheelOverlay.WheelOption> getWheelOptions() {
@@ -135,7 +139,8 @@ public class WheelWrapper {
 
     /**
      * Check whether the wheel can be spun immediately by calling {@link #spin()}.
-     * If not, you can buy a respin using {@link #buyRespin()} or buy a whole new wheel with {@link #buyNew()}
+     * If not, you can buy a respin using {@link #buyRespin(boolean)} or buy a whole new wheel with {@link #buyNew()}
+     *
      * @return True if the wheel can be spun immediately.
      */
     public boolean isSpinAvailable() {
@@ -144,6 +149,7 @@ public class WheelWrapper {
 
     /**
      * Check whether the wheel can be respun, not considering limited resources.
+     *
      * @return True if the wheel can be respun, given infinite resources.
      */
     public boolean canBeRespun() {
@@ -157,6 +163,7 @@ public class WheelWrapper {
      * Get the cost in accelerators to purchase a respin.
      * This returns 0 if the wheel cannot be respun, which may be due to the game deciding such, or may be because you
      * already have a spin available {@link #isSpinAvailable()}.
+     *
      * @return The cost in accelerators, or 0 if a respin cannot be purchased at the moment.
      */
     public int getRespinAcceleratorCost() {
@@ -167,6 +174,7 @@ public class WheelWrapper {
      * Get the cost in lucky tickets to purchase a respin.
      * This returns 0 if the wheel cannot be respun, which may be due to the game deciding such, or may be because you
      * already have a spin available {@link #isSpinAvailable()}.
+     *
      * @return The cost in lucky tickets, or 0 if a respin cannot be purchased at the moment.
      */
     public int getRespinTicketCost() {
@@ -176,12 +184,13 @@ public class WheelWrapper {
     /**
      * Purchase a respin of the existing wheel.
      * After successfully calling this method, {@link #isSpinAvailable()} will return true.
-     * @return The number of accelerators spent to purchase the respin.
-     * @throws SpinAvailableException if the wheel already has a spin available.
-     * @throws IllegalStateException if the wheel can no longer be respun.
+     *
+     * @return The number of items spent to purchase the respin (either tickets or wheels).
+     * @throws SpinAvailableException      if the wheel already has a spin available.
+     * @throws IllegalStateException       if the wheel can no longer be respun.
      * @throws NotEnoughResourcesException if you don't have enough resources to purchase a respin.
      */
-    public int buyRespin() {
+    public int buyRespin(boolean useTickets) {
         if (isSpinAvailable()) {
             throw new SpinAvailableException("A spin is available, you should spin first. (Logic error?)");
         }
@@ -190,17 +199,25 @@ public class WheelWrapper {
         // research, because that research costs accelerators, and items needed to advance research are more likely
         // to appear on the wheel, meaning the wheel options selection can change depending on accelerator count.
         ProgressManager pm = Game.i.progressManager;
-        int ticketCost = getRespinTicketCost();
-        int accelCost = getRespinAcceleratorCost();
-        if (ticketCost == 0 && accelCost == 0) {
-            throw new IllegalStateException("This wheel can't be respun anymore, use buyNew()");
-        }
-        // TODO: make an option using tickets to purchase respins. I never want to buy respins with tickets, but maybe that's just me.
-        boolean canUseAccel = accelCost != 0 && accelCost <= pm.getAccelerators();
-        if (canUseAccel) {
-            pm.removeAccelerators(accelCost);
+        int cost;
+        if (useTickets) {
+            cost = getRespinTicketCost();
+            if (cost == 0) {
+                throw new IllegalStateException("This wheel can't be respun using tickets anymore, use buyNew()");
+            }
+            if (pm.getItemsCount(Item.D.LUCKY_SHOT_TOKEN) < cost) {
+                throw new NotEnoughResourcesException("You don't have enough tickets to buy a respin");
+            }
+            pm.removeItems(Item.D.LUCKY_SHOT_TOKEN, cost);
         } else {
-            throw new NotEnoughResourcesException("You don't have enough accelerators or tickets to buy a respin");
+            cost = getRespinAcceleratorCost();
+            if (cost == 0) {
+                throw new IllegalStateException("This wheel can't be respun using accelerators anymore, use buyNew()");
+            }
+            if (pm.getAccelerators() < cost) {
+                throw new NotEnoughResourcesException("You don't have enough accelerators or tickets to buy a respin");
+            }
+            pm.removeAccelerators(cost);
         }
 
         // This is essentially the check that's used to decide whether we need to do the animation of removing a slice
@@ -219,13 +236,14 @@ public class WheelWrapper {
         } else {
             invoke(wheel, "d", "respin"); // Game internal respin setup
         }
-        return accelCost;
+        return cost;
     }
 
     /**
      * Buy a new wheel. This costs one lucky ticket.
      * After successfully calling this method, {@link #isSpinAvailable()} will return true.
-     * @throws SpinAvailableException if a spin is available on the current wheel.
+     *
+     * @throws SpinAvailableException      if a spin is available on the current wheel.
      * @throws NotEnoughResourcesException if you don't have enough lucky tickets to purchase a new wheel.
      */
     public void buyNew() {
@@ -252,7 +270,8 @@ public class WheelWrapper {
         // because by that point it's done everything we needed anyway.
         try {
             wheel.rebuild();
-        } catch (NullPointerException ignored) {}
+        } catch (NullPointerException ignored) {
+        }
 
         // Avoids an NPE when we're finalizing the wheel result
         for (LuckyWheelOverlay.WheelOptionConfig option : options) {

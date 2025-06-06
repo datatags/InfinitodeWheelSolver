@@ -1,54 +1,44 @@
 package me.datatags.infinitodewheelsolver;
 
-import com.prineside.tdi2.Item;
-import com.prineside.tdi2.ItemStack;
-
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class PathResult {
-    private final List<Boolean> path;
-    private int acceleratorCost = 0;
-    private final Map<Item, Integer> rewards = new HashMap<>();
+    private final List<PathStep> steps;
+    private int lastDesiredItemIndex = -1;
 
-    public PathResult(List<Boolean> path) {
-        this.path = path;
+    public PathResult(List<PathStep> steps) {
+        this.steps = steps;
     }
 
     public PathResult() {
         this(new ArrayList<>());
     }
 
-    public void addAcceleratorCost(int cost) {
-        acceleratorCost += cost;
+    public List<PathStep> getPathSteps() {
+        return steps;
     }
 
-    public int getAcceleratorCost() {
-        return acceleratorCost;
-    }
-
-    public List<Boolean> getPath() {
-        return path;
-    }
-
-    public void addStep(boolean step) {
-        path.add(step);
-    }
-
-    public Map<Item, Integer> getRewards() {
-        return rewards;
-    }
-
-    public void addReward(ItemStack reward) {
-        rewards.merge(reward.getItem(), reward.getCount(), Integer::sum);
+    public void addStep(PathStep step, boolean isRewardDesired) {
+        if (isRewardDesired) {
+            lastDesiredItemIndex = steps.size();
+        }
+        steps.add(step);
     }
 
     public PathResult copy() {
-        PathResult o = new PathResult(new ArrayList<>(path));
-        o.acceleratorCost = acceleratorCost;
-        o.rewards.putAll(rewards);
-        return o;
+        return new PathResult(new ArrayList<>(steps));
+    }
+
+    public PathStep peekLast() {
+        return steps.get(steps.size() - 1);
+    }
+
+    public PathStep popLast() {
+        return steps.remove(steps.size() - 1);
+    }
+
+    public void trim() {
+        steps.subList(lastDesiredItemIndex + 1, steps.size()).clear();
     }
 }

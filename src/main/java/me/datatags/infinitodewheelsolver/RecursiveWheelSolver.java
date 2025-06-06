@@ -31,20 +31,11 @@ public class RecursiveWheelSolver extends WheelSolver {
         throw new IllegalStateException("Couldn't find inventory manager to replace");
     }
 
-    protected void doWheelAction(WheelWrapper wheel, boolean action, PathResult result) {
-        if (action) {
-            wheel.buyNew();
-        } else {
-            result.addAcceleratorCost(wheel.buyRespin());
-        }
-        result.addStep(action);
-        result.addReward(wheel.spin().item);
-    }
-
     @Override
     public void solve() {
         WheelWrapper wheel = new WheelWrapper();
         doStep(wheel, false, new PathResult());
+        System.out.println("Halfway done! (approximately)");
         doStep(wheel, true, new PathResult());
     }
 
@@ -54,23 +45,37 @@ public class RecursiveWheelSolver extends WheelSolver {
 
         doWheelAction(wheel, step, result);
 
-        int ticketCount = ProgressPrefs.i().inventory.getItemsCount(Item.D.LUCKY_SHOT_TOKEN);
-        boolean haveAccels = wheel.canBeRespun() && (Game.i.progressManager.getAccelerators() - config.getMinAccels()) >= wheel.getRespinAcceleratorCost();
-        boolean haveTickets = ticketCount > config.getMinTickets();
+        int ticketCount = ProgressPrefs.i().inventory.getItemsCount(Item.D.LUCKY_SHOT_TOKEN) - config.getMinTickets();
+        int accelCount = Game.i.progressManager.getAccelerators() - config.getMinAccels();
+        int ticketCost = wheel.getRespinTicketCost();
+        int accelCost = wheel.getRespinAcceleratorCost();
+        if (ticketCost == 0) ticketCost = Integer.MAX_VALUE;
+        if (accelCost == 0) accelCost = Integer.MAX_VALUE;
+        boolean canRespin;
+        if (config.isRespinUsingTickets()) {
+            canRespin = ticketCount >= ticketCost;
+        } else {
+            canRespin = accelCount >= accelCost;
+        }
+
         // Don't bother respinning on the last wheel if it doesn't have anything good
-        boolean doRespin = haveAccels && (haveTickets || hasDesirableItems(wheel));
+        boolean doRespin = canRespin && (hasDesirableItems(wheel) || ticketCount > ticketCost);
+        boolean doNewWheel = ticketCount > 0;
 
         if (doRespin) {
             doStep(wheel, false, result.copy());
         }
 
-        if (haveTickets) {
+        if (doNewWheel) {
             doStep(wheel, true, result.copy());
         }
 
-        if (!doRespin && !haveTickets) { // leaf node
-            // No choices left, save results
-            results.add(PackedResult.fromPathResult(result, this));
+        if (!doRespin && !doNewWheel) { // leaf node
+            // No choices left, trim and save results
+            result.trim();
+            if (!result.getPathSteps().isEmpty()) {
+                results.add(PackedResult.fromPathResult(result, this));
+            }
             if (++totalResults % 100000 == 0) {
                 System.out.println("Explored " + totalResults + " paths so far...");
             }

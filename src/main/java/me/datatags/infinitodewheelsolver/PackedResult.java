@@ -1,10 +1,12 @@
 package me.datatags.infinitodewheelsolver;
 
 import com.prineside.tdi2.Item;
+import com.prineside.tdi2.ItemStack;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -25,16 +27,18 @@ public class PackedResult implements Comparable<PackedResult> {
 
     public static PackedResult fromPathResult(PathResult result, WheelSolver solver) {
         double value = solver.calculateScore(result);
-        BitSet path = new BitSet(result.getPath().size());
-        for (int i = 0; i < result.getPath().size(); i++) {
-            path.set(i, result.getPath().get(i));
+        List<PathStep> steps = result.getPathSteps();
+        BitSet path = new BitSet(steps.size());
+        Map<Item, SimpleItemStack> items = new HashMap<>();
+        for (int i = 0; i < steps.size(); i++) {
+            path.set(i, steps.get(i).getAction());
+            ItemStack stack = steps.get(i).getReward();
+            items.computeIfAbsent(stack.getItem(),
+                    item -> new SimpleItemStack(item.getTitle().toString(), 0, solver.isDesirableItem(item))).addAmount(stack.getCount());
         }
-        List<SimpleItemStack> items = new ArrayList<>(result.getRewards().size());
-        for (Map.Entry<Item, Integer> entry : result.getRewards().entrySet()) {
-            items.add(new SimpleItemStack(entry.getKey().getTitle().toString(), entry.getValue(), solver.isDesirableItem(entry.getKey())));
-        }
-        Collections.sort(items);
-        return new PackedResult(value, path, items);
+        List<SimpleItemStack> simple = new ArrayList<>(items.values());
+        Collections.sort(simple);
+        return new PackedResult(value, path, simple);
     }
 
     // If a.value < b.value, then a < b.
